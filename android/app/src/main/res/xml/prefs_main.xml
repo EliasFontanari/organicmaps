@@ -68,6 +68,16 @@
       app:singleLineTitle="false"
       android:summary="@string/maps_storage_summary"
       android:order="8" />
+    <!-- Fork F2: the value lives in MwmApplication.prefs(), see SettingsPrefsFragment.initLowStorageThresholdPrefsCallbacks(). -->
+    <ListPreference
+      android:key="@string/pref_low_storage_threshold"
+      android:title="@string/low_storage_threshold_title"
+      app:singleLineTitle="false"
+      app:useSimpleSummaryProvider="true"
+      android:persistent="false"
+      android:entries="@array/low_storage_threshold_entries"
+      android:entryValues="@array/low_storage_threshold_values"
+      android:order="9" />
     <SwitchPreferenceCompat
       android:key="@string/pref_enable_logging"
       android:title="@string/enable_logging"
