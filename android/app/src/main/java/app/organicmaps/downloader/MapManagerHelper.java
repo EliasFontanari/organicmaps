@@ -8,9 +8,12 @@ import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.util.Consumer;
 import app.organicmaps.R;
+import app.organicmaps.sdk.downloader.CountryItem;
 import app.organicmaps.sdk.downloader.ExpandRetryConfirmationListener;
 import app.organicmaps.sdk.downloader.MapManager;
+import app.organicmaps.sdk.downloader.UpdateInfo;
 import app.organicmaps.sdk.util.ConnectionState;
+import app.organicmaps.util.StorageSpaceMonitor;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.lang.ref.WeakReference;
 
@@ -125,12 +128,51 @@ public class MapManagerHelper
     return true;
   }
 
+  // Fork F2: soft warning when a download would leave less free space than the low storage threshold.
+  // Runs after the hard "Not enough space" check and before the mobile data warning, which it then chains to.
+  private static boolean warnLowSpaceAndOn3g(Context context, long downloadBytes, @NonNull Runnable onAcceptListener)
+  {
+    final long freeBytes = StorageSpaceMonitor.getFreeBytes();
+    if (freeBytes == StorageSpaceMonitor.UNKNOWN)
+      return warnOn3gInternal(context, onAcceptListener);
+    final long freeAfterBytes = Math.max(0, freeBytes - downloadBytes);
+    if (!StorageSpaceMonitor.isBelowThreshold(context, freeAfterBytes))
+      return warnOn3gInternal(context, onAcceptListener);
+
+    final String freeAfter = StorageSpaceMonitor.formatSize(context, freeAfterBytes);
+    final String threshold = StorageSpaceMonitor.formatSize(context, StorageSpaceMonitor.getThresholdBytes(context));
+    new MaterialAlertDialogBuilder(context, R.style.MwmTheme_AlertDialog)
+        .setTitle(R.string.low_storage_title)
+        .setMessage(context.getString(R.string.download_low_storage_message, freeAfter, threshold))
+        .setNegativeButton(R.string.cancel, null)
+        .setPositiveButton(R.string.download, (dlg, which) -> warnOn3gInternal(context, onAcceptListener))
+        .show();
+    return true;
+  }
+
+  private static long getDownloadSize(@Nullable String countryId)
+  {
+    if (TextUtils.isEmpty(countryId))
+      return 0;
+    final CountryItem item = CountryItem.fill(countryId);
+    // totalSize is the whole node, size is what is already on the device.
+    return Math.max(0, item.totalSize - item.size);
+  }
+
+  private static long getUpdateSize(@Nullable String countryId)
+  {
+    if (TextUtils.isEmpty(countryId))
+      return 0;
+    final UpdateInfo info = MapManager.nativeGetUpdateInfo(countryId);
+    return info == null ? 0 : info.totalSize;
+  }
+
   public static boolean warnOn3gUpdate(Context context, @Nullable String countryId,
                                        @NonNull final Runnable onAcceptListener)
   {
     // noinspection SimplifiableIfStatement
     if (TextUtils.isEmpty(countryId) || !notifyNoSpaceToUpdate(context, countryId))
-      return warnOn3gInternal(context, onAcceptListener);
+      return warnLowSpaceAndOn3g(context, getUpdateSize(countryId), onAcceptListener);
 
     return true;
   }
@@ -139,14 +181,14 @@ public class MapManagerHelper
   {
     // noinspection SimplifiableIfStatement
     if (TextUtils.isEmpty(countryId) || !notifyNoSpace(context, countryId))
-      return warnOn3gInternal(context, onAcceptListener);
+      return warnLowSpaceAndOn3g(context, getDownloadSize(countryId), onAcceptListener);
 
     return true;
   }
 
   public static boolean warnOn3g(Context context, long size, @NonNull Runnable onAcceptListener)
   {
-    return !notifyNoSpace(context, size) && warnOn3gInternal(context, onAcceptListener);
+    return !notifyNoSpace(context, size) && warnLowSpaceAndOn3g(context, size, onAcceptListener);
   }
 
   public static boolean warn3gAndDownload(Context context, final String countryId,
