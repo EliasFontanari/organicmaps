@@ -114,6 +114,7 @@ import app.organicmaps.search.SearchPageViewModel;
 import app.organicmaps.search.SearchRequest;
 import app.organicmaps.settings.SettingsActivity;
 import app.organicmaps.util.SharingUtils;
+import app.organicmaps.util.StorageSpaceMonitor;
 import app.organicmaps.util.ThemeSwitcher;
 import app.organicmaps.util.ThemeUtils;
 import app.organicmaps.util.UiUtils;
@@ -1048,6 +1049,7 @@ public class MwmActivity extends BaseMwmFragmentActivity
 
     mNavigationController.refresh();
     refreshLightStatusBar();
+    showLowStorageWarningIfNeeded();
 
     MwmApplication.from(this).getSensorHelper().addListener(this);
   }
@@ -1621,6 +1623,21 @@ public class MwmActivity extends BaseMwmFragmentActivity
       dismissLocationErrorDialog();
       mLocationPermissionRequest.launch(new String[] {ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION});
     }
+  }
+
+  // Fork F2: warn once per session when the free space in the maps storage is below the threshold.
+  private void showLowStorageWarningIfNeeded()
+  {
+    if (mAlertDialog != null || !StorageSpaceMonitor.shouldShowStartupWarning(this))
+      return;
+    final String free = StorageSpaceMonitor.formatSize(this, StorageSpaceMonitor.getFreeBytes());
+    final String threshold = StorageSpaceMonitor.formatSize(this, StorageSpaceMonitor.getThresholdBytes(this));
+    mAlertDialog = new MaterialAlertDialogBuilder(this, R.style.MwmTheme_AlertDialog)
+                       .setTitle(R.string.low_storage_title)
+                       .setMessage(getString(R.string.low_storage_startup_message, free, threshold))
+                       .setPositiveButton(R.string.ok, null)
+                       .setOnDismissListener(dialog -> mAlertDialog = null)
+                       .show();
   }
 
   /**
