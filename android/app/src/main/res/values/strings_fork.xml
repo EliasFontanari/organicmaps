@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings added by the personal fork. Kept out of strings.xml (generated upstream) to keep rebases clean.
+     English only, so they are marked as not translatable. -->
+<resources>
+  <!-- F2: low storage warning -->
+  <string name="pref_low_storage_threshold" translatable="false">LowStorageThreshold</string>
+  <string name="low_storage_threshold_title" translatable="false">Low storage warning</string>
+  <string name="low_storage_title" translatable="false">Low storage</string>
+  <string name="low_storage_startup_message" translatable="false">Only %1$s free in the maps storage (warning threshold: %2$s). Free up some space to keep downloading maps and recording tracks.</string>
+  <string name="track_rec_storage_title" translatable="false">Start track recording?</string>
+  <string name="track_rec_storage_message" translatable="false">Free space available for recording: %1$s.</string>
+  <string name="track_rec_storage_low" translatable="false">This is below the warning threshold of %1$s.</string>
+  <string name="track_rec_storage_unknown" translatable="false">The free space in the maps storage could not be determined.</string>
+  <string name="track_rec_storage_start" translatable="false">Start</string>
+  <string name="download_low_storage_message" translatable="false">After this download only %1$s will remain free (warning threshold: %2$s). Download anyway?</string>
+
+  <string-array name="low_storage_threshold_entries" translatable="false">
+    <item>Off</item>
+    <item>200 MB</item>
+    <item>500 MB</item>
+    <item>1 GB</item>
+    <item>2 GB</item>
+  </string-array>
+  <!-- Decimal megabytes, see StorageSpaceMonitor.BYTES_IN_MB. -->
+  <string-array name="low_storage_threshold_values" translatable="false">
+    <item>0</item>
+    <item>200</item>
+    <item>500</item>
+    <item>1000</item>
+    <item>2000</item>
+  </string-array>
+</resources>
