@@ -34,6 +34,7 @@ import app.organicmaps.sdk.util.NetworkPolicy;
 import app.organicmaps.sdk.util.PowerManagment;
 import app.organicmaps.sdk.util.SharedPropertiesUtils;
 import app.organicmaps.sdk.util.log.LogsManager;
+import app.organicmaps.util.StorageSpaceMonitor;
 import app.organicmaps.util.ThemeSwitcher;
 import app.organicmaps.util.Utils;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -55,6 +56,7 @@ public class SettingsPrefsFragment extends BaseXmlSettingsFragment implements La
     super.onViewCreated(view, savedInstanceState);
 
     initStoragePrefCallbacks();
+    initLowStorageThresholdPrefsCallbacks();
     initMeasureUnitsPrefsCallbacks();
     initZoomPrefsCallbacks();
     initMapStylePrefsCallbacks();
@@ -540,6 +542,17 @@ public class SettingsPrefsFragment extends BaseXmlSettingsFragment implements La
         getSettingsActivity().stackFragment(StoragePathFragment.class, getString(R.string.maps_storage), null);
       }
 
+      return true;
+    });
+  }
+
+  // Fork F2: low storage warning threshold, stored in MwmApplication.prefs() by StorageSpaceMonitor.
+  private void initLowStorageThresholdPrefsCallbacks()
+  {
+    final ListPreference pref = getPreference(getString(R.string.pref_low_storage_threshold));
+    pref.setValue(String.valueOf(StorageSpaceMonitor.getThresholdMb(requireContext())));
+    pref.setOnPreferenceChangeListener((preference, newValue) -> {
+      StorageSpaceMonitor.setThresholdMb(requireContext(), Integer.parseInt((String) newValue));
       return true;
     });
   }
