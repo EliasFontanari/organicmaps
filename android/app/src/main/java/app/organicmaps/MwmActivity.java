@@ -269,7 +269,7 @@ public class MwmActivity extends BaseMwmFragmentActivity
     if (intent.getBooleanExtra(EXTRA_START_TRACK_RECORDING, false))
     {
       if (!TrackRecorder.nativeIsTrackRecordingEnabled())
-        startTrackRecording();
+        confirmAndStartTrackRecording();
       return;
     }
     if (intent.getBooleanExtra(EXTRA_FINISH_TRACK_RECORDING, false))
@@ -2064,6 +2064,37 @@ public class MwmActivity extends BaseMwmFragmentActivity
     SettingsActivity.startForVoiceInstructions(this);
   }
 
+  // Fork F2: show the free space and ask for confirmation before starting a new recording.
+  // Not used when resuming an active recording or after the location permission is granted.
+  private void confirmAndStartTrackRecording()
+  {
+    final long freeBytes = StorageSpaceMonitor.getFreeBytes();
+    String message;
+    if (freeBytes == StorageSpaceMonitor.UNKNOWN)
+      message = getString(R.string.track_rec_storage_unknown);
+    else
+    {
+      message = getString(R.string.track_rec_storage_message, StorageSpaceMonitor.formatSize(this, freeBytes));
+      if (StorageSpaceMonitor.isBelowThreshold(this, freeBytes))
+        message += "\n\n"
+                 + getString(R.string.track_rec_storage_low,
+                             StorageSpaceMonitor.formatSize(this, StorageSpaceMonitor.getThresholdBytes(this)));
+    }
+
+    dismissAlertDialog();
+    mAlertDialog = new MaterialAlertDialogBuilder(this, R.style.MwmTheme_AlertDialog)
+                       .setTitle(R.string.track_rec_storage_title)
+                       .setMessage(message)
+                       .setNegativeButton(R.string.cancel, null)
+                       .setPositiveButton(R.string.track_rec_storage_start, (dlg, which) -> startTrackRecording())
+                       .setOnDismissListener(dialog -> {
+                         // startTrackRecording() may have opened another dialog in the meantime.
+                         if (mAlertDialog == dialog)
+                           mAlertDialog = null;
+                       })
+                       .show();
+  }
+
   private boolean startTrackRecording()
   {
     if (!LocationUtils.checkFineLocationPermission(this))
@@ -2122,7 +2153,7 @@ public class MwmActivity extends BaseMwmFragmentActivity
     if (TrackRecorder.nativeIsTrackRecordingEnabled())
       toggleTrackRecordingPP();
     else
-      startTrackRecording();
+      confirmAndStartTrackRecording();
   }
 
   private void toggleTrackRecordingPP()
