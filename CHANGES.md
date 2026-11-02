@@ -75,7 +75,7 @@ Branch: `feature/low-storage-warning`
 
 ### Aperto
 
-- **Verifica su dispositivo da fare.** Finora solo compilazione Java. Prova
+- **Verifica su dispositivo da fare.** `assembleFdroidDebug -Parm64` compila e produce l'APK. Prova
   prevista: impostare la soglia a 2 GB (o sopra lo spazio libero), poi controllare
   dialog all'avvio, conferma prima della registrazione con la riga "below the
   threshold", e avviso prima del download di una regione. Con soglia Off: niente
