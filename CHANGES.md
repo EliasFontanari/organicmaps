@@ -24,11 +24,33 @@ Branch: `feature/low-storage-warning`
 
 ### File aggiunti
 
-_(in corso)_
+- `android/app/src/main/java/app/organicmaps/util/StorageSpaceMonitor.java` —
+  logica di F2: spazio libero nella cartella delle mappe, soglia in
+  `MwmApplication.prefs()` (chiave `LowStorageThresholdMb`, MB decimali, default
+  500, 0 = Off), avviso all'avvio al massimo una volta per processo, formattazione.
+- `android/app/src/main/res/values/strings_fork.xml` — tutte le stringhe del fork
+  (solo inglese, `translatable="false"`) e gli array della preferenza soglia.
 
 ### File modificati
 
-_(in corso)_
+- `android/app/src/main/res/xml/prefs_main.xml` — categoria `pref_settings_general`,
+  nuova `ListPreference` `pref_low_storage_threshold` subito dopo `pref_storage`
+  (`order="9"`), `persistent="false"`.
+- `android/app/src/main/java/app/organicmaps/settings/SettingsPrefsFragment.java` —
+  `onViewCreated()`: chiamata a `initLowStorageThresholdPrefsCallbacks()`; nuovo
+  metodo omonimo che legge e scrive la soglia tramite `StorageSpaceMonitor`.
+- `android/app/src/main/java/app/organicmaps/MwmActivity.java`:
+  - `onResume()`: una riga, `showLowStorageWarningIfNeeded()`; nuovo metodo omonimo
+    che usa lo slot `mAlertDialog` esistente (non si sovrappone ad altri dialog).
+  - nuovo `confirmAndStartTrackRecording()`: dialog sempre presente con lo spazio
+    libero, riga aggiuntiva se sotto soglia, Cancel/Start. Chiamato da
+    `onTrackRecordingOptionSelected()` e da `processIntent()`
+    (`EXTRA_START_TRACK_RECORDING`) al posto di `startTrackRecording()`.
+- `android/app/src/main/java/app/organicmaps/downloader/MapManagerHelper.java` —
+  nuovi `warnLowSpaceAndOn3g()`, `getDownloadSize()`, `getUpdateSize()`;
+  `warnOn3gUpdate()`, `warnOn3g(countryId)` e `warnOn3g(size)` passano da
+  `warnLowSpaceAndOn3g()` invece che direttamente da `warnOn3gInternal()`.
+  Ordine: blocco "Not enough space" del core → avviso soglia F2 → avviso dati mobili.
 
 ### Decisioni
 
@@ -42,7 +64,21 @@ _(in corso)_
   modifica di continuo: riduce i conflitti nei rebase. Solo inglese, niente traduzioni.
 - **Scartato: notifica durante la registrazione.** Sostituita dalla conferma prima
   dell'avvio, su richiesta.
+- **Il dialog di conferma non compare** quando `startTrackRecording()` riprende una
+  registrazione già attiva (creazione dell'activity) né dopo la concessione del
+  permesso di posizione: in quel caso l'utente ha già confermato.
+- **Soglia in `MwmApplication.prefs()`** e non nelle SharedPreferences di default
+  della schermata impostazioni: stesso schema delle altre preferenze dell'app.
+- **Avviso download agganciato in `MapManagerHelper`** e non nei singoli chiamanti
+  (downloader, place page, banner sulla mappa, errore di routing): tutti passano
+  dai tre metodi `warnOn3g*`.
 
 ### Aperto
 
-_(in corso)_
+- **Verifica su dispositivo da fare.** Finora solo compilazione Java. Prova
+  prevista: impostare la soglia a 2 GB (o sopra lo spazio libero), poi controllare
+  dialog all'avvio, conferma prima della registrazione con la riga "below the
+  threshold", e avviso prima del download di una regione. Con soglia Off: niente
+  dialog all'avvio né prima del download; la conferma di registrazione resta, senza
+  la riga di avviso.
+- Stringhe solo in inglese.
